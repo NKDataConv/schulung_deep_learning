@@ -1,0 +1,5 @@
+venv/
+logs/
+.idea/
+deprecated/
+.DS_Store

@@ -1,0 +1,17 @@
+tensorflow-macos
+tensorflow-metal
+loguru
+huggingface
+transformers
+pandas
+scikit-learn
+matplotlib
+plotly
+kaleido
+nltk
+gensim
+sentence_transformers
+datasets
+spacy
+wordcloud
+tensorflow_datasets
