@@ -1,3 +1,17 @@
+### Erläuterung der wichtigsten Elemente:
+
+# 1. **MLflow-Session**: Die Skript-Session wird mit `mlflow.start_run()` gestartet und mit `mlflow.end_run()` beendet, um einen zusammenhängenden Tracking-Vorgang zu schaffen.
+#
+# 2. **Datensatz**: Der Iris-Datensatz wird als Beispiel verwendet, um grundlegende Klassifizierungsaufgaben zu demonstrieren.
+#
+# 3. **Modelltraining**: Es wird ein `RandomForestClassifier` trainiert, und die Vorhersagen sowie die Genauigkeit werden erhalten.
+#
+# 4. **Hyperparameter- und Metrik-Logging**: Wichtige Kennzahlen und Hyperparameter werden in MLflow geloggt, was eine effektive Nachverfolgbarkeit der Experimente ermöglicht.
+#
+# 5. **Modell-Speicherung**: Das trainierte Modell wird gespeichert, sodass es später verwendet oder in die Produktion integriert werden kann.
+# 
+# 6. Starte die UI mit `mlflow ui` (im Terminal)
+
 # Importieren der notwendigen Bibliotheken
 import mlflow
 import mlflow.sklearn
@@ -43,24 +57,13 @@ mlflow.log_param("random_state", 42)
 # Logging der Metriken
 mlflow.log_metric("accuracy", accuracy)
 
-# Schritt 7: Speichern des Modells
+# Schritt 7: Speichern des Modells mit einem Input-Beispiel
 print("Speichern des Modells mit MLflow...")
-mlflow.sklearn.log_model(model, "random_forest_model")
+input_example = X_test[0:1]  # Verwenden Sie ein Beispiel aus den Testdaten
+mlflow.sklearn.log_model(model, "random_forest_model", input_example=input_example)
 
 # Beenden der MLflow-Session
 mlflow.end_run()
 
 print("Die MLflow-Integration in den Trainings-Workflow wurde erfolgreich durchgeführt.")
 print("Sie können die Ergebnisse im MLflow UI überprüfen.")
-
-### Erläuterung der wichtigsten Elemente:
-
-# 1. **MLflow-Session**: Die Skript-Session wird mit `mlflow.start_run()` gestartet und mit `mlflow.end_run()` beendet, um einen zusammenhängenden Tracking-Vorgang zu schaffen.
-#
-# 2. **Datensatz**: Der Iris-Datensatz wird als Beispiel verwendet, um grundlegende Klassifizierungsaufgaben zu demonstrieren.
-#
-# 3. **Modelltraining**: Es wird ein `RandomForestClassifier` trainiert, und die Vorhersagen sowie die Genauigkeit werden erhalten.
-#
-# 4. **Hyperparameter- und Metrik-Logging**: Wichtige Kennzahlen und Hyperparameter werden in MLflow geloggt, was eine effektive Nachverfolgbarkeit der Experimente ermöglicht.
-#
-# 5. **Modell-Speicherung**: Das trainierte Modell wird gespeichert, sodass es später verwendet oder in die Produktion integriert werden kann.

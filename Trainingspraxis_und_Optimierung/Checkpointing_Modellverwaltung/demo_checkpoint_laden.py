@@ -1,16 +1,3 @@
-"""
-Aufgabenstellung: 
-In dieser Übung sollen Sie lernen, wie man Checkpoints während des Trainings eines Deep Learning Modells setzt und wie man
-einen Trainingslauf mittels dieser Checkpoints fortsetzen kann. Dazu sollen Sie die folgenden Schritte ausführen:
-
-1. Erstellen Sie ein einfaches neuronales Netzwerk mit Keras, um das MNIST-Datenset zu klassifizieren.
-2. Implementieren Sie Checkpointing, um das Modell während des Trainings nach jeder Epoche zu speichern.
-3. Unterbrechen Sie den Trainingsprozess nach einigen Epochen.
-4. Laden Sie das gespeicherte Modell erneut und setzen den Trainingsprozess fort.
-5. Beobachten Sie die Auswirkungen des fortgesetzten Trainings auf die Genauigkeit und den Verlust des Modells.
-6. Dokumentieren Sie jede wichtige Zeile im Code durch Kommentare, um die Schritte klar zu machen.
-"""
-
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten
@@ -35,12 +22,12 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 
 # Verzeichnis für das Speichern der Checkpoints
-checkpoint_dir = './checkpoints'
-if not os.path.exists(checkpoint_dir):
-    os.makedirs(checkpoint_dir)
+CHECKPOINT_DIR = './checkpoints'
+if not os.path.exists(CHECKPOINT_DIR):
+    os.makedirs(CHECKPOINT_DIR)
 
 # Initialisieren des Checkpoints - speichert nur die besten Modelle
-checkpoint = ModelCheckpoint(filepath=os.path.join(checkpoint_dir, 'cp-{epoch:04d}.ckpt'),
+checkpoint = ModelCheckpoint(filepath=os.path.join(CHECKPOINT_DIR, 'cp-{epoch:04d}.weights.h5'),
                              save_weights_only=True,
                              verbose=1,
                              save_best_only=True,
@@ -51,9 +38,8 @@ print("Starte das erste Training...")
 model.fit(x_train, y_train,
           epochs=3,  # Erste Phase: Trainiere für 3 Epochen
           validation_data=(x_test, y_test),
+          verbose=1,
           callbacks=[checkpoint])
-
-# Denken Sie daran, den aktuellen Zustand des Modells zur späteren Fortsetzung zu speichern.
 
 # Erstellen eines neuen Modells derselben Architektur - für den Fall, dass das Skript neu gestartet wird
 model_new = Sequential([
@@ -67,14 +53,22 @@ model_new.compile(optimizer='adam',
                   metrics=['accuracy'])
 
 # Laden der Gewichte vom letzten gespeicherten Checkpoint
-latest = tf.train.latest_checkpoint(checkpoint_dir)
-model_new.load_weights(latest)
+latest = tf.train.latest_checkpoint(CHECKPOINT_DIR)
+if latest:
+    try:
+        model_new.load_weights(latest)
+        print(f"Gewichte von {latest} erfolgreich geladen.")
+    except Exception as e:
+        print(f"Fehler beim Laden der Gewichte: {e}")
 
 # Fortsetzen des Trainings
 print("Fortsetzen des Trainings...")
 model_new.fit(x_train, y_train,
-              epochs=5,  # Setzt das Training bis zur 8. Epoche fort
+              epochs=5,  # Setzt das Training bis zur 5. Epoche fort
               initial_epoch=3,  # Setzt das Training ab der 4. Epoche fort
+              verbose=1,
               validation_data=(x_test, y_test))
 
-# Beachten Sie die Verbesserungen der Genauigkeit durch das Fortsetzen des Trainings
+# Ausgabe:
+pred = model_new.predict(x_test[:1])  # Beispielvorhersage
+print("Vorhersage:", pred.argmax())  # Ausgabe der Vorhersage

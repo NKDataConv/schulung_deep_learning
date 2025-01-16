@@ -1,7 +1,25 @@
+# Anmerkungen zur GPU-Nutzung und Mixed Precision
+'''
+Mixed Precision Training nutzt weniger Speicherplatz und kann das Training auf modernen GPUs beschleunigen.
+Es kombiniert float16 und float32, um Rechenleistung zu optimieren.
+- dtype: 'float16' für die Layer und Variablen, wo es sinnvoll ist
+- Der Optimizer und der Verlust beinhalten weiterhin float32 zur Vermeidung von Unterlauf/Überlauf-Problemen.
+
+Vor der Nutzung von Mixed Precision Training, sollte sichergestellt werden, dass die Hardware (z.B. NVIDIA GPUs) dies unterstützt und die TensorFlow-Version aktuell ist.
+'''
+
+import os
+
+# Deaktivieren der GPU-Nutzung
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 # Importieren der notwendigen Bibliotheken
 import tensorflow as tf
 from tensorflow.keras import layers, models
 import numpy as np
+
+# Sicherstellen, dass nur die CPU verwendet wird
+tf.config.set_visible_devices([], 'GPU')
 
 # Überprüfung, ob eine GPU vorhanden ist und ob Mixed Precision unterstützt wird
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -11,7 +29,8 @@ else:
     print("Keine GPU gefunden, das Training wird auf der CPU durchgeführt.")
 
 # Aktivieren von Mixed Precision
-policy = tf.keras.mixed_precision.set_global_policy('mixed_float16')
+policy = tf.keras.mixed_precision.Policy('mixed_float16')
+tf.keras.mixed_precision.set_global_policy(policy)
 print(f"Mixed Precision Policy gesetzt auf: {policy.name}")
 
 # Erstellen von Beispiel-Daten
@@ -34,34 +53,14 @@ model = models.Sequential([
 ])
 
 # Kompilieren des Modells
-# Beachten Sie, dass der Verlust 'binary_crossentropy' für eine binäre Klassifizierung verwendet wird
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 # Zusammenfassen des Modells, um eine Übersicht der Layer und Parameter zu erhalten
 model.summary()
 
 # Trainieren des Modells
-# Hinweis: In einer echten Anwendung sollten Sie eine Validation-Split verwenden
 history = model.fit(X_train, y_train, epochs=10, batch_size=32)
 
 # Bewertung des Modells
 loss, accuracy = model.evaluate(X_train, y_train)
 print(f"Modell Verlust: {loss:.4f}, Genauigkeit: {accuracy:.4f}")
-
-# Speichern des Modells
-model.save('mixed_precision_model.h5')
-print("Das Modell wurde gespeichert.")
-
-# Optional: Laden des Modells
-# geladenes_model = tf.keras.models.load_model('mixed_precision_model.h5')
-# print("Das Modell wurde erfolgreich geladen.")
-
-# Anmerkungen zur GPU-Nutzung und Mixed Precision
-'''
-Mixed Precision Training nutzt weniger Speicherplatz und kann das Training auf modernen GPUs beschleunigen.
-Es kombiniert float16 und float32, um Rechenleistung zu optimieren.
-- dtype: 'float16' für die Layer und Variablen, wo es sinnvoll ist
-- Der Optimizer und der Verlust beinhalten weiterhin float32 zur Vermeidung von Unterlauf/Überlauf-Problemen.
-
-Vor der Nutzung von Mixed Precision Training, sollte sichergestellt werden, dass die Hardware (z.B. NVIDIA GPUs) dies unterstützt und die TensorFlow-Version aktuell ist.
-'''

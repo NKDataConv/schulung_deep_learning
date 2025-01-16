@@ -11,12 +11,12 @@ data = load_dataset("rotten_tomatoes")
 
 # Select a stratified subset of the train and test data
 train_data, _, train_labels, _ = train_test_split(
-    data["train"]["text"], data["train"]["label"], 
+    data["train"]["text"], data["train"]["label"],
     test_size=0.8, stratify=data["train"]["label"], random_state=42
 )
 
 test_data, _, test_labels, _ = train_test_split(
-    data["test"]["text"], data["test"]["label"], 
+    data["test"]["text"], data["test"]["label"],
     test_size=0.8, stratify=data["test"]["label"], random_state=42
 )
 

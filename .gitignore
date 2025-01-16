@@ -3,3 +3,7 @@ logs/
 .idea/
 deprecated/
 .DS_Store
+mlruns/
+mac_requirements.txt
+checkpoints/
+mlartifacts/

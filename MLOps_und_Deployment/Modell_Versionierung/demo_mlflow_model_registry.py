@@ -1,80 +1,106 @@
-# Import der benötigten Bibliotheken
+# Vor dem Start muss die mlflow ui gestartet werden:
+# im Terminal: mlflow ui
+
 import mlflow
-import mlflow.sklearn
-from sklearn import datasets
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
-import joblib
+import mlflow.tensorflow
+import tensorflow as tf
+from tensorflow.keras import layers, models
+import numpy as np
 
-# Setze den MLflow Tracking Server (falls lokal, kann auch mit einem Remote Server ersetzt werden)
-mlflow.set_tracking_uri("http://localhost:5000")  # Beispiel URI für den Tracking Server
+# Constants
+BATCH_SIZE = 32
+EPOCHS = 5
+MODEL_NAME = "MNISTModel"
+ARTIFACT_LOCATION = "models"
+EXPERIMENT_NAME = "MNISTModelExperiment"
+TRACKING_URI = "http://127.0.0.1:5000"
 
-# Projektkonfiguration
-model_name = "IrisRandomForestModel"
-artifact_location = "models"  # Speicherort der Modelle
-experiment_name = "IrisModelExperiment"  # Experimentname
+# Set the MLflow Tracking Server
+mlflow.set_tracking_uri(TRACKING_URI)
 
-# Erstelle ein Experiment in MLflow
-mlflow.set_experiment(experiment_name)
+# Create an experiment in MLflow
+mlflow.set_experiment(EXPERIMENT_NAME)
 
-# Lade den Iris-Datensatz
-iris = datasets.load_iris()
-X = iris.data
-y = iris.target
+# Load and preprocess MNIST dataset
+print("Loading MNIST dataset...")
+(X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
 
-# Teile die Daten in Trainings- und Testdaten
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Normalize and reshape the data
+X_train = X_train.reshape(-1, 28*28).astype('float32') / 255.0
+X_test = X_test.reshape(-1, 28*28).astype('float32') / 255.0
+
+# Convert labels to categorical
+y_train = tf.keras.utils.to_categorical(y_train, 10)
+y_test = tf.keras.utils.to_categorical(y_test, 10)
 
 # MLflow Tracking Block
 with mlflow.start_run() as run:
-    # Trainiere ein Random Forest Modell
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
+    # Create a simple feedforward neural network
+    model = models.Sequential([
+        layers.Dense(128, activation='relu', input_shape=(784,)),
+        layers.Dense(10, activation='softmax')
+    ])
 
-    # Mache Vorhersagen auf dem Test-Set
-    predictions = model.predict(X_test)
+    # Compile the model
+    model.compile(optimizer='adam',
+                 loss='categorical_crossentropy',
+                 metrics=['accuracy'])
 
-    # Berechne die Genauigkeit des Modells
-    accuracy = accuracy_score(y_test, predictions)
-    print(f"Model Accuracy: {accuracy:.4f}")
+    # Create progress bar for training
+    print("\nTraining model...")
 
-    # Logge Hyperparameter, Metriken und das trainierte Modell
-    mlflow.log_param("n_estimators", 100)
-    mlflow.log_param("random_state", 42)
-    mlflow.log_metric("accuracy", accuracy)
+    # Train the model
+    history = model.fit(
+        X_train, y_train,
+        batch_size=BATCH_SIZE,
+        epochs=EPOCHS,
+        validation_split=0.2,
+        verbose=1
+    )
 
-    # Logge das Modell in den MLflow Model Registry
-    mlflow.sklearn.log_model(model, model_name)
+    # Evaluate the model
+    test_loss, test_accuracy = model.evaluate(X_test, y_test, verbose=0)
+    print(f"\nModel Accuracy: {test_accuracy:.4f}")
 
-    # Zeige die Run-ID für den weiteren Einsatz und Referenz
+    # Log parameters, metrics, and the trained model
+    mlflow.log_param("batch_size", BATCH_SIZE)
+    mlflow.log_param("epochs", EPOCHS)
+    mlflow.log_metric("accuracy", test_accuracy)
+    mlflow.log_metric("loss", test_loss)
+
+    # Log the model in MLflow Model Registry
+    mlflow.tensorflow.log_model(model, MODEL_NAME)
+
+    # Show the Run ID
     print(f"Run ID: {run.info.run_id}")
 
-# Model Registrierungsintegration
-# Hier könnten wir das Modell registrieren, um es in einer CI/CD-Pipeline verfügbar zu machen
-model_uri = f"runs:/{run.info.run_id}/{model_name}"
 
-# Registriere das Modell in der MLflow Model Registry
+# Register the model in MLflow Model Registry
+
 from mlflow.tracking import MlflowClient
 
-client = MlflowClient()
-model_version = client.create_registered_model(model_name)
+client = MlflowClient(TRACKING_URI)
+
+# Add tags to the model
+tags = {
+    "model_type": "feedforward_nn",
+    "dataset": "MNIST",
+    "framework": "TensorFlow",
+    "experiment_name": EXPERIMENT_NAME
+}
+
+model_version = client.create_registered_model(MODEL_NAME, tags=tags)
+
+# Model Registration Integration
+model_uri = f"runs:/{run.info.run_id}/{MODEL_NAME}"
+
+# model_version = client.create_model_version(MODEL_NAME, model_uri, tags=tags)
 print(f"Model registered with name: {model_version}")
 
-# Prototyp (konzeptionell, nicht implementiert) für CI/CD, wo wir dieses Modell möglicherweise deployen möchten
-# Schritt 1: CI/CD Tool konfigurieren (z.B. Jenkins, GitHub Actions)
-# Schritt 2: Modell mit der MLflow API abrufen und in einer Produktionsumgebung bereitstellen
+# Load the model from registry
+# model_from_registry = mlflow.tensorflow.load_model(model_uri)
+model_from_registry = mlflow.tensorflow.load_model("MNISTModelTest")
 
-# Um das Modell aus der Registry abzurufen
-registered_model_uri = f"models:/{model_name}/1"  # '1' ist eine Beispielversion
-model_from_registry = mlflow.sklearn.load_model(registered_model_uri)
-
-# Mache Vorhersagen mit dem registrierten Modell
-predictions_from_registry = model_from_registry.predict(X_test)
-print(f"Predictions from registered model: {predictions_from_registry}")
-
-# Speicher das Modell unsere eigene .pkl Datei für die zukunft
-joblib.dump(model, 'RandomForestModel.pkl')
-
-# Hinweis: In einer echten CI/CD Pipeline können Schritte hinzugefügt werden,
-# um automatisierte Tests, Modellüberwachung, etc. zu integrieren.
+# Make predictions with the registered model
+predictions_from_registry = model_from_registry.predict(X_test[:5])
+print(f"\nSample predictions from registered model: \n{np.argmax(predictions_from_registry, axis=1)}")
