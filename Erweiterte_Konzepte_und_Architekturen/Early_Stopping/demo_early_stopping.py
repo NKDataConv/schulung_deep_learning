@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 
 # Erstelle einen Datensatz für die Demo
 # Hier verwenden wir den 'make_moons'-Datensatz, der geeignet für Klassifikationsaufgaben ist
-X, y = make_moons(n_samples=1000, noise=0.1, random_state=42)
+X, y = make_moons(n_samples=10000, noise=0.1, random_state=42)
 
 # Teile den Datensatz in Trainings- und Testdaten auf
 # 80% für das Training und 20% für das Testen

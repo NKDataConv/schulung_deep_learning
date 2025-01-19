@@ -9,13 +9,13 @@ import evaluate
 MODEL_ID = "bert-base-cased"
 BATCH_SIZE = 32
 LEARNING_RATE = 3e-5
-NUM_EPOCHS = 0.3  # Train on 30% of one epoch for faster results
+NUM_EPOCHS = 1
 
 # Prepare data and splits
 tomatoes = load_dataset("rotten_tomatoes")
 # Take smaller subset for faster training
-train_data = tomatoes["train"].shuffle(seed=42).select(range(1000))
-test_data = tomatoes["test"].shuffle(seed=42).select(range(200))
+train_data = tomatoes["train"].shuffle(seed=42)  # for speedup: .select(range(1000))
+test_data = tomatoes["test"].shuffle(seed=42)  # for speedup: .select(range(200))
 
 # Load Model and Tokenizer
 model = AutoModelForSequenceClassification.from_pretrained(MODEL_ID, num_labels=2)

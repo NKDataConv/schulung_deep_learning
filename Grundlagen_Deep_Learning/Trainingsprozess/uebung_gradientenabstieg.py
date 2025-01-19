@@ -17,6 +17,7 @@ from sklearn.model_selection import train_test_split
 from tf_keras.models import Sequential
 from tf_keras.layers import Dense
 from tf_keras.utils import to_categorical
+from tf_keras import optimizers
 import plotly.graph_objects as go
 from sklearn.preprocessing import StandardScaler
 
@@ -45,7 +46,7 @@ def train_nn_with_hyperparams(X_train, y_train, X_test, y_test, epochs, learning
     model.add(Dense(y_train.shape[1], activation='softmax'))  # Ausgabeschicht
 
     # Kompilieren des Modells
-    optimizer = keras.optimizers.SGD(learning_rate=learning_rate)  # Lernrate
+    optimizer = optimizers.SGD(learning_rate=learning_rate)  # Lernrate
     model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
     # Modellzusammenfassung anzeigen

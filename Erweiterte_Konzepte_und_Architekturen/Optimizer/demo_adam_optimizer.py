@@ -3,6 +3,8 @@ from tf_keras.models import Sequential
 from tf_keras.layers import Dense
 from tf_keras.datasets import mnist
 from tf_keras.utils import to_categorical
+from tf_keras.callbacks import TensorBoard
+from tf_keras import optimizers
 from sklearn.preprocessing import StandardScaler
 import datetime
 
@@ -40,7 +42,7 @@ def train_model(optimizer, learning_rate, log_dir):
                   metrics=['accuracy'])
 
     # TensorBoard Callback
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+    tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
 
     # Modell trainieren
     model.fit(x_train, y_train, epochs=5, validation_data=(x_test, y_test), callbacks=[tensorboard_callback])
@@ -49,8 +51,8 @@ def train_model(optimizer, learning_rate, log_dir):
 # Lernraten und Optimizer definieren
 learning_rates = [0.01, 0.001, 0.0001]
 optimizers = {
-    "SGD": tf.keras.optimizers.SGD,
-    "Adam": tf.keras.optimizers.Adam
+    "SGD": optimizers.SGD,
+    "Adam": optimizers.Adam
 }
 
 # Training starten

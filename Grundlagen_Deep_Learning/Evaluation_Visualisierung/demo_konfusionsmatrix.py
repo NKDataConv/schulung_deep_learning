@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 import datetime
 from tf_keras.models import Sequential
 from tf_keras.layers import Dense, Dropout
-from tf_keras.callbacks import TensorBoard
+from tf_keras.callbacks import TensorBoard, Callback
 import plotly.figure_factory as ff
 
 # Konstanten
@@ -56,7 +56,7 @@ print("Building neural network...")
 model = create_model()
 
 # TensorBoard Callback mit Confusion Matrix
-class ConfusionMatrixCallback(tf.keras.callbacks.Callback):
+class ConfusionMatrixCallback(Callback):
     def on_epoch_end(self, epoch, logs=None):
         if epoch % 5 == 0:  # Alle 5 Epochen
             predictions = self.model.predict(X_test)

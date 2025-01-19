@@ -5,6 +5,8 @@ import tensorflow as tf
 from tf_keras.models import Sequential
 from tf_keras.layers import Dense
 from tf_keras.callbacks import TensorBoard
+from tf_keras import metrics
+from tf_keras.utils import to_categorical
 import numpy as np
 import datetime
 
@@ -21,7 +23,7 @@ num_classes = 2
 # Zufällige Merkmale
 X_train = np.random.rand(num_samples, num_features).astype(np.float32)
 # Zufällige Klassen (0 oder 1)
-y_train = np.random.randint(num_classes, size=num_samples)
+y_train = to_categorical(np.random.randint(num_classes, size=num_samples), num_classes=num_classes)
 
 # Erstellen des Modells mit Keras
 def create_model():
@@ -32,9 +34,9 @@ def create_model():
 
     # Kompilieren des Modells mit Recall-Metrik
     model.compile(optimizer='adam',
-                  loss='sparse_categorical_crossentropy',
+                  loss='categorical_crossentropy',
                   metrics=['accuracy',
-                           tf.keras.metrics.Recall(class_id=1)])  # Recall für Klasse 1
+                           metrics.Recall(class_id=1)])  # Recall für Klasse 1
     return model
 
 

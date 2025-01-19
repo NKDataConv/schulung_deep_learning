@@ -11,6 +11,9 @@
 
 
 import tensorflow as tf
+from tf_keras import datasets
+from tf_keras import Sequential
+from tf_keras import layers
 import numpy as np
 
 # Hyperparameter
@@ -19,7 +22,7 @@ AUTOTUNE = tf.data.AUTOTUNE
 EPOCHS = 5
 
 # Lade den MNIST-Datensatz
-(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
+(train_images, train_labels), (test_images, test_labels) = datasets.mnist.load_data()
 
 # Normalisiere die Bilder
 train_images = train_images / 255.0
@@ -41,11 +44,11 @@ def create_model():
     """
     Creates and returns a simple neural network for MNIST classification
     """
-    model = tf.keras.Sequential([
-        tf.keras.layers.Input(shape=(28, 28)),
-        tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(128, activation='relu'),
-        tf.keras.layers.Dense(10, activation='softmax')
+    model = Sequential([
+        layers.Input(shape=(28, 28)),
+        layers.Flatten(),
+        layers.Dense(128, activation='relu'),
+        layers.Dense(10, activation='softmax')
     ])
     
     model.compile(optimizer='adam',

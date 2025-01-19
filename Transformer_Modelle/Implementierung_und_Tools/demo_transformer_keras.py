@@ -1,8 +1,9 @@
 # Importieren der benötigten Bibliotheken
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
 from tf_keras import layers
+from tf_keras import Sequential
+from tf_keras import Model
 
 # Setze die Zufallszahl für Reproduzierbarkeit
 tf.random.set_seed(42)
@@ -70,7 +71,7 @@ class EncoderLayer(layers.Layer):
     def __init__(self, d_model, num_heads, dff, rate=0.1):
         super(EncoderLayer, self).__init__()
         self.mha = MultiHeadAttention(num_heads, d_model)
-        self.ffn = keras.Sequential([
+        self.ffn = Sequential([
             layers.Dense(dff, activation='relu'),  # Feed Forward Network
             layers.Dense(d_model)  # Rückkehr zur Eingabedimension
         ])
@@ -93,7 +94,7 @@ class EncoderLayer(layers.Layer):
 # Transformer Modell erstellen
 # ----------------------------
 
-class Transformer(tf.keras.Model):
+class Transformer(Model):
     def __init__(self, num_layers, d_model, num_heads, dff, input_vocab_size, max_position_embeddings, rate=0.1):
         super(Transformer, self).__init__()
         self.encoder = [EncoderLayer(d_model, num_heads, dff, rate) for _ in range(num_layers)]

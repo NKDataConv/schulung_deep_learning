@@ -3,7 +3,7 @@
 
 import mlflow.tensorflow
 import tensorflow as tf
-from tf_keras import layers, models
+from tf_keras import layers, models, datasets, utils
 import numpy as np
 
 # Constants
@@ -22,15 +22,15 @@ mlflow.set_experiment(EXPERIMENT_NAME)
 
 # Load and preprocess MNIST dataset
 print("Loading MNIST dataset...")
-(X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
+(X_train, y_train), (X_test, y_test) = datasets.mnist.load_data()
 
 # Normalize and reshape the data
 X_train = X_train.reshape(-1, 28*28).astype('float32') / 255.0
 X_test = X_test.reshape(-1, 28*28).astype('float32') / 255.0
 
 # Convert labels to categorical
-y_train = tf.keras.utils.to_categorical(y_train, 10)
-y_test = tf.keras.utils.to_categorical(y_test, 10)
+y_train = utils.to_categorical(y_train, 10)
+y_test = utils.to_categorical(y_test, 10)
 
 
 def create_model():

@@ -16,6 +16,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 # Importieren der notwendigen Bibliotheken
 import tensorflow as tf
 from tf_keras import layers, models
+from tf_keras import mixed_precision
 import numpy as np
 
 # Sicherstellen, dass nur die CPU verwendet wird
@@ -29,8 +30,8 @@ else:
     print("Keine GPU gefunden, das Training wird auf der CPU durchgeführt.")
 
 # Aktivieren von Mixed Precision
-policy = tf.keras.mixed_precision.Policy('mixed_float16')
-tf.keras.mixed_precision.set_global_policy(policy)
+policy = mixed_precision.Policy('mixed_float16')
+mixed_precision.set_global_policy(policy)
 print(f"Mixed Precision Policy gesetzt auf: {policy.name}")
 
 # Erstellen von Beispiel-Daten

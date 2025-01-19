@@ -3,6 +3,8 @@ from tf_keras.datasets import mnist
 from tf_keras.models import Sequential
 from tf_keras.layers import Dense, Dropout, Activation, Conv2D, MaxPooling2D, Flatten
 from tf_keras.optimizers import SGD
+from tf_keras.utils import to_categorical
+from tf_keras import callbacks
 import numpy as np
 import plotly.graph_objects as go
 
@@ -21,8 +23,8 @@ x_train = np.expand_dims(x_train, -1)
 x_test = np.expand_dims(x_test, -1)
 
 # Labels in kategorische Form umwandeln
-y_train = tf.keras.utils.to_categorical(y_train, NUM_CLASSES)
-y_test = tf.keras.utils.to_categorical(y_test, NUM_CLASSES)
+y_train = to_categorical(y_train, NUM_CLASSES)
+y_test = to_categorical(y_test, NUM_CLASSES)
 
 # CNN-Modell erstellen
 def create_cnn_model():
@@ -70,7 +72,7 @@ def step_decay_schedule(epoch, lr):
 model_step = create_cnn_model()
 model_step.compile(loss='categorical_crossentropy', optimizer=SGD(learning_rate=0.01), metrics=['accuracy'])
 
-lr_scheduler_step = tf.keras.callbacks.LearningRateScheduler(step_decay_schedule, verbose=1)
+lr_scheduler_step = callbacks.LearningRateScheduler(step_decay_schedule, verbose=1)
 history_step = model_step.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, validation_data=(x_test, y_test), callbacks=[lr_scheduler_step], verbose=2)
 plot_history(history_step, "Step Decay")
 
@@ -83,6 +85,6 @@ def exponential_decay_schedule(epoch, lr):
 model_expo = create_cnn_model()
 model_expo.compile(loss='categorical_crossentropy', optimizer=SGD(learning_rate=0.01), metrics=['accuracy'])
 
-lr_scheduler_expo = tf.keras.callbacks.LearningRateScheduler(exponential_decay_schedule, verbose=1)
+lr_scheduler_expo = callbacks.LearningRateScheduler(exponential_decay_schedule, verbose=1)
 history_expo = model_expo.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, validation_data=(x_test, y_test), callbacks=[lr_scheduler_expo], verbose=2)
 plot_history(history_expo, "Exponentialer Decay")
