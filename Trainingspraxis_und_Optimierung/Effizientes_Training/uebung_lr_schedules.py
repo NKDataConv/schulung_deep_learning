@@ -1,8 +1,8 @@
 import tensorflow as tf
-from tensorflow.keras.datasets import mnist
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, Activation, Conv2D, MaxPooling2D, Flatten
-from tensorflow.keras.optimizers import SGD
+from tf_keras.datasets import mnist
+from tf_keras.models import Sequential
+from tf_keras.layers import Dense, Dropout, Activation, Conv2D, MaxPooling2D, Flatten
+from tf_keras.optimizers import SGD
 import numpy as np
 import plotly.graph_objects as go
 

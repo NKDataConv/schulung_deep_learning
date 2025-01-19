@@ -13,11 +13,11 @@
 # 6. Erstellen Sie grafische Darstellungen der Train- und Testverluste für
 #    jede Aktivierungsfunktion.
 
-from keras.datasets import mnist
-from keras.models import Sequential
-from keras.layers import Dense, Flatten
-from keras.utils import to_categorical
-from keras.optimizers import Adam
+from tf_keras.datasets import mnist
+from tf_keras.models import Sequential
+from tf_keras.layers import Dense, Flatten
+from tf_keras.utils import to_categorical
+from tf_keras.optimizers import Adam
 from sklearn.preprocessing import StandardScaler
 import plotly.graph_objects as go
 
@@ -36,15 +36,27 @@ x_test = scaler.transform(x_test)        # Standardisieren der Testdaten
 y_train = to_categorical(y_train, 10)
 y_test = to_categorical(y_test, 10)
 
+def create_model(activation_function):
+    """
+    Creates and returns a MLP model with specified activation function
+    
+    Args:
+        activation_function (str): Activation function to use in hidden layer
+    """
+    model = Sequential()
+    model.add(Dense(128, activation=activation_function, input_shape=(28 * 28,)))  # Hidden layer
+    model.add(Dense(10, activation='softmax'))  # Output layer for 10 classes
+    
+    model.compile(optimizer=Adam(), 
+                 loss='categorical_crossentropy', 
+                 metrics=['accuracy'])
+    
+    return model
+
 # Funktion zum Erstellen und Trainieren eines MLP-Modells mit einer gegebenen Aktivierungsfunktion
 def create_and_train_mlp(activation_function):
     # Modellarchitektur: Einfaches MLP mit einer versteckten Schicht
-    model = Sequential()
-    model.add(Dense(128, activation=activation_function, input_shape=(28 * 28,)))  # Versteckte Schicht
-    model.add(Dense(10, activation='softmax'))  # Ausgangsschicht für 10 Klassen
-
-    # Kompilieren des Modells mit dem Adam-Optimizer
-    model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['accuracy'])
+    model = create_model(activation_function)
 
     # Modelltraining mit Trainingsdaten
     history = model.fit(x_train, y_train, epochs=10, batch_size=128, validation_data=(x_test, y_test))

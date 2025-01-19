@@ -1,17 +1,15 @@
-# Hinweis: Dieses Skript ist ein einfaches Beispiel einer RNN-basierten Textklassifikation.
-# In realen Anwendungen sollten umfangreichere Daten verwendet und mehrere Hyperparameter optimiert werden.
-
 # Importieren der benötigten Bibliotheken
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from keras.models import Sequential
-from keras.layers import LSTM, Dense, Embedding
-from tensorflow.keras.callbacks import TensorBoard
+from tf_keras.preprocessing.text import Tokenizer
+from tf_keras.preprocessing.sequence import pad_sequences
+from tf_keras.models import Sequential
+from tf_keras.layers import LSTM, Dense, Embedding
+from tf_keras.callbacks import TensorBoard
 import datetime
+
 
 # Setzen von Zufallswerten für die Reproduzierbarkeit
 np.random.seed(42)
@@ -82,20 +80,26 @@ X_test_padded = pad_sequences(X_test_seq, maxlen=max_length, padding='post')
 # 4. LSTM Modell erstellen
 # ------------------------------
 
+def create_model():
+    """
+    Creates and returns an LSTM model for text classification
+    
+    Returns:
+        model: Compiled LSTM model ready for training
+    """
+    model = Sequential()
+    # Embedding-Layer hinzufügen
+    model.add(Embedding(input_dim=1000, output_dim=64, input_length=max_length))
+    # LSTM-Layer hinzufügen
+    model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
+    # Dense-Layer für die Klassifikation hinzufügen
+    model.add(Dense(3, activation='softmax'))  # 3 Klassen für positiv, neutral, negativ
+    # Modell kompilieren
+    model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model    
+
 # Modell initialisieren
-model = Sequential()
-
-# Embedding-Layer hinzufügen
-model.add(Embedding(input_dim=1000, output_dim=64, input_length=max_length))
-
-# LSTM-Layer hinzufügen
-model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
-
-# Dense-Layer für die Klassifikation hinzufügen
-model.add(Dense(3, activation='softmax'))  # 3 Klassen für positiv, neutral, negativ
-
-# Modell kompilieren
-model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+model = create_model()
 
 # ------------------------------
 # 5. Modelltraining

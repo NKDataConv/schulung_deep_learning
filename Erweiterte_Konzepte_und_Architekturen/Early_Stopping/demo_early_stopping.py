@@ -1,12 +1,12 @@
 # Importiere benötigte Bibliotheken
 import numpy as np
 import matplotlib.pyplot as plt
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.callbacks import EarlyStopping
+from tf_keras.models import Sequential
+from tf_keras.layers import Dense
+from tf_keras.callbacks import EarlyStopping
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import make_moons
-from tensorflow.keras.callbacks import TensorBoard
+from tf_keras.callbacks import TensorBoard
 import datetime
 import plotly.graph_objects as go
 
@@ -20,12 +20,14 @@ X, y = make_moons(n_samples=1000, noise=0.1, random_state=42)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Erstelle ein einfaches neuronales Netzwerkmodell
-model = Sequential()
-model.add(Dense(10, input_dim=2, activation='relu'))  # Erster Hidden Layer mit 10 Neuronen
-model.add(Dense(1, activation='sigmoid'))  # Ausgabe Layer für binäre Klassifikation
+def create_model():
+    model = Sequential()
+    model.add(Dense(10, input_dim=2, activation='relu'))  # Erster Hidden Layer mit 10 Neuronen
+    model.add(Dense(1, activation='sigmoid'))  # Ausgabe Layer für binäre Klassifikation
 
-# Kompiliere das Modell
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    # Kompiliere das Modell
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model
 
 # Definiere den Early Stopping Callback
 # Wir wollen das Training beenden, wenn sich die Validierungsgenauigkeit nicht mehr verbessert
@@ -39,9 +41,10 @@ tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 # Trainiere das Modell mit den Trainingsdaten
 # Wir verwenden 20% der Trainingsdaten für die Validierung
+model = create_model()
 history = model.fit(X_train, y_train, 
                     validation_split=0.2, 
-                    epochs=100,  # Maximale Anzahl der Epochen
+                    epochs=200,  # Maximale Anzahl der Epochen
                     batch_size=10, 
                     callbacks=[early_stopping, tensorboard_callback])  # Füge den Early Stopping Callback hinzu
 

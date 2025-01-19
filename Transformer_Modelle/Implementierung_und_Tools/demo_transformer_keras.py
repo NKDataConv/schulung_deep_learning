@@ -2,7 +2,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
+from tf_keras import layers
 
 # Setze die Zufallszahl für Reproduzierbarkeit
 tf.random.set_seed(42)

@@ -1,10 +1,10 @@
 # Importieren der benötigten Bibliotheken
 import numpy as np
 import plotly.graph_objects as go
-from keras.models import Sequential
-from keras.layers import Dense, Dropout
-from keras.datasets import mnist
-from keras.utils import to_categorical
+from tf_keras.models import Sequential
+from tf_keras.layers import Dense, Dropout
+from tf_keras.datasets import mnist
+from tf_keras.utils import to_categorical
 from sklearn.preprocessing import StandardScaler
 
 # Setzen des Zufalls-Seed für Reproduzierbarkeit

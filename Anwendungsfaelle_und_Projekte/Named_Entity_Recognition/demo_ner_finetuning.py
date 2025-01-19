@@ -104,7 +104,6 @@ def compute_metrics(eval_pred):
     return {"f1": results["overall_f1"]}
 
 
-
 # Token-classification Data Collator
 data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 

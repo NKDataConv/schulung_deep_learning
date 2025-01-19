@@ -4,9 +4,9 @@ import numpy as np
 from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.optimizers import Adam
+from tf_keras.models import Sequential
+from tf_keras.layers import Dense
+from tf_keras.optimizers import Adam
 
 # Lade das Boston Housing Dataset als Beispiel
 # Der Datensatz umfasst verschiedene Merkmale von Häusern in Boston, und wir wollen den Preis vorhersagen.

@@ -1,14 +1,14 @@
 # Import notwendiger Bibliotheken
 import matplotlib.pyplot as plt
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten
-from tensorflow.keras.applications import MobileNetV2
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.datasets import cifar10
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.callbacks import TensorBoard
+from tf_keras.preprocessing.image import ImageDataGenerator
+from tf_keras.models import Sequential
+from tf_keras.layers import Dense, Flatten
+from tf_keras.applications import MobileNetV2
+from tf_keras.optimizers import Adam
+from tf_keras.callbacks import EarlyStopping
+from tf_keras.datasets import cifar10
+from tf_keras.utils import to_categorical
+from tf_keras.callbacks import TensorBoard
 import os
 import numpy as np
 import pickle
@@ -19,7 +19,7 @@ import plotly.graph_objects as go
 # IMG_WIDTH, IMG_HEIGHT = 224, 224  # Größe der Bilder, die VGG16 erwartet
 NUM_CLASSES = 10  # Anzahl der Klassen im benutzerdefinierten Datensatz
 BATCH_SIZE = 32  # Anzahl der Bilder pro Batch
-EPOCHS = 20  # Anzahl der Trainingsepochen
+EPOCHS = 50  # Anzahl der Trainingsepochen
 
 # Lade das CIFAR-10 Dataset
 # falls SSL Fehler -> downloaden und in /data Ordner verschieben
@@ -79,23 +79,25 @@ val_generator = val_datagen.flow(X_val, y_val, batch_size=BATCH_SIZE)
 base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
 
 # Setze einige der oberen Schichten des Basis-Modells auf trainierbar
-for layer in base_model.layers[:-8]:  # Trainiere die letzten 10 Schichten
+for layer in base_model.layers[:-8]:  # Trainiere die letzten 8 Schichten
     layer.trainable = False
 
 # Erstelle das vollständige Modell
-model = Sequential()
-model.add(base_model)  # Füge das vortrainierte Modell hinzu
-model.add(Flatten())  # Flate die Ausgaben des Basis-Modells
-model.add(Dense(256, activation='relu'))  # Füge eine dichte Schicht hinzu
-model.add(Dense(NUM_CLASSES, activation='softmax'))  # Ausgabeschicht mit Softmax für mehrere Klassen
+def create_model():
+    model = Sequential()
+    model.add(base_model)  # Füge das vortrainierte Modell hinzu
+    model.add(Flatten())  # Flate die Ausgaben des Basis-Modells
+    model.add(Dense(256, activation='relu'))  # Füge eine dichte Schicht hinzu
+    model.add(Dense(NUM_CLASSES, activation='softmax'))  # Ausgabeschicht mit Softmax für mehrere Klassen
 
-# Kompiliere das Modell
-model.compile(optimizer=Adam(learning_rate=0.0001),
-              loss='categorical_crossentropy',
-              metrics=['accuracy'])
+    # Kompiliere das Modell
+    model.compile(optimizer=Adam(learning_rate=0.0001),
+                loss='categorical_crossentropy',
+                metrics=['accuracy'])
+    return model
 
 # Callback zur frühzeitigen Beendigung
-early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 
 # Erstellen des TensorBoard-Log-Verzeichnisses
 log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -104,6 +106,7 @@ log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 # Trainiere das Modell
+model = create_model()
 history = model.fit(
     train_generator,
     validation_data=val_generator,

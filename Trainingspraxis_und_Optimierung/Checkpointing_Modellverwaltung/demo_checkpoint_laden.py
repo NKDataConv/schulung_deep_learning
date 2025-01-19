@@ -1,8 +1,8 @@
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.datasets import mnist
+from tf_keras.models import Sequential
+from tf_keras.layers import Dense, Flatten
+from tf_keras.callbacks import ModelCheckpoint
+from tf_keras.datasets import mnist
 import os
 
 # Laden des MNIST-Datensets
@@ -10,16 +10,18 @@ import os
 x_train, x_test = x_train / 255.0, x_test / 255.0  # Normalisieren der Daten
 
 # Definieren eines sehr einfachen neuronalen Netzwerks
-model = Sequential([
-    Flatten(input_shape=(28, 28)),  # Um die 2D-Bilder in einen 1D-Array zu konvertieren
-    Dense(128, activation='relu'),  # Erste verborgene Schicht mit 128 Neuronen und ReLU Aktivierung
-    Dense(10, activation='softmax')  # Ausgangsschicht mit 10 Neuronen für jede Ziffer und Softmax Aktivierung
-])
+def create_model():
+    model = Sequential([
+        Flatten(input_shape=(28, 28)),  # Um die 2D-Bilder in einen 1D-Array zu konvertieren
+        Dense(128, activation='relu'),  # Erste verborgene Schicht mit 128 Neuronen und ReLU Aktivierung
+        Dense(10, activation='softmax')  # Ausgangsschicht mit 10 Neuronen für jede Ziffer und Softmax Aktivierung
+    ])
 
-# Kompilieren des Modells mit Optimierer, Verlustfunktion und Metriken
-model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy'])
+    # Kompilieren des Modells mit Optimierer, Verlustfunktion und Metriken
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+    return model
 
 # Verzeichnis für das Speichern der Checkpoints
 CHECKPOINT_DIR = './checkpoints'
@@ -33,6 +35,8 @@ checkpoint = ModelCheckpoint(filepath=os.path.join(CHECKPOINT_DIR, 'cp-{epoch:04
                              save_best_only=True,
                              monitor='val_accuracy')
 
+model = create_model()
+
 # Training des Modells, unterbrechen nach einigen Epochen
 print("Starte das erste Training...")
 model.fit(x_train, y_train,
@@ -42,15 +46,19 @@ model.fit(x_train, y_train,
           callbacks=[checkpoint])
 
 # Erstellen eines neuen Modells derselben Architektur - für den Fall, dass das Skript neu gestartet wird
-model_new = Sequential([
-    Flatten(input_shape=(28, 28)),
-    Dense(128, activation='relu'),
-    Dense(10, activation='softmax')
-])
+def create_model_new():
+    model_new = Sequential([
+        Flatten(input_shape=(28, 28)),
+        Dense(128, activation='relu'),
+        Dense(10, activation='softmax')
+    ])
 
-model_new.compile(optimizer='adam',
-                  loss='sparse_categorical_crossentropy',
-                  metrics=['accuracy'])
+    model_new.compile(optimizer='adam',
+                      loss='sparse_categorical_crossentropy',
+                      metrics=['accuracy'])
+    return model_new
+
+model_new = create_model_new()
 
 # Laden der Gewichte vom letzten gespeicherten Checkpoint
 latest = tf.train.latest_checkpoint(CHECKPOINT_DIR)

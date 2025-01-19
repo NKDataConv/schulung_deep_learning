@@ -37,18 +37,25 @@ def create_dataset(images, labels):
 train_dataset = create_dataset(train_images, train_labels)
 test_dataset = create_dataset(test_images, test_labels)
 
-# Beispiel für ein einfaches neuronales Netzwerk für die Bildklassifikation
-model = tf.keras.Sequential([
-    tf.keras.layers.Input(shape=(28, 28)),
-    tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dense(10, activation='softmax')  # 10 Klassen für die Ziffern 0-9
-])
+def create_model():
+    """
+    Creates and returns a simple neural network for MNIST classification
+    """
+    model = tf.keras.Sequential([
+        tf.keras.layers.Input(shape=(28, 28)),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dense(10, activation='softmax')
+    ])
+    
+    model.compile(optimizer='adam',
+                 loss='sparse_categorical_crossentropy',
+                 metrics=['accuracy'])
+    
+    return model
 
-# Kompiliere das Modell
-model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy'])
+# Create and use the model
+model = create_model()
 
 # Trainiere das Modell
 model.fit(train_dataset, epochs=EPOCHS)
@@ -69,4 +76,3 @@ input_image = test_images[0]
 predicted_label = predict(input_image)
 
 print(f"Vorhersage für das erste Testbild: {predicted_label[0]}")
-

@@ -1,5 +1,7 @@
-tensorflow-macos
-tensorflow-metal
+tensorflow
+tf-keras
+numpy
+accelerate
 loguru
 huggingface
 transformers

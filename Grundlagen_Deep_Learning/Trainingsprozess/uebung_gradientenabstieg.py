@@ -14,9 +14,9 @@
 import numpy as np
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.utils import to_categorical
+from tf_keras.models import Sequential
+from tf_keras.layers import Dense
+from tf_keras.utils import to_categorical
 import plotly.graph_objects as go
 from sklearn.preprocessing import StandardScaler
 

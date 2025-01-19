@@ -1,9 +1,7 @@
 # Importieren der notwendigen Bibliotheken
 import numpy as np
-import pandas as pd
-import keras
-from keras.models import Sequential
-from keras.layers import Dense
+from tf_keras.models import Sequential
+from tf_keras.layers import Dense
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
@@ -23,18 +21,22 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-# Definition des neuronalen Netzes
-# Einfache Architektur mit einem Eingabeschicht, einer versteckten Schicht und einer Ausgabeschicht
-model = Sequential()
-model.add(Dense(10, activation='relu', input_shape=(X_train.shape[1],)))  # Eingabeschicht + versteckte Schicht
-model.add(Dense(1, activation='sigmoid'))  # Ausgabeschicht für binäre Klassifikation
+def create_model():
+    """
+    Creates and returns a simple neural network model
+    """
+    model = Sequential()
+    model.add(Dense(10, activation='relu', input_shape=(X_train.shape[1],)))  # Input layer + hidden layer
+    model.add(Dense(1, activation='sigmoid'))  # Output layer for binary classification
+    
+    model.compile(loss='binary_crossentropy',  # Loss function for binary classification
+                 optimizer='adam',             # Adam optimizer
+                 metrics=['accuracy'])         # Metric for performance evaluation
+    
+    return model
 
-# Compile das Modell
-model.compile(loss='binary_crossentropy',  # Verlustfunktion für binäre Klassifikation
-              optimizer='adam',            # Adam Optimierer
-              metrics=['accuracy'])        # Metrik zur Bewertung der Leistung
-
-# Modellzusammenfassung anzeigen
+# Create and train the model
+model = create_model()
 model.summary()
 
 # Training des Modells

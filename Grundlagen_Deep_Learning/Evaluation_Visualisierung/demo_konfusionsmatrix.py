@@ -3,9 +3,9 @@ from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import datetime
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
-from tensorflow.keras.callbacks import TensorBoard
+from tf_keras.models import Sequential
+from tf_keras.layers import Dense, Dropout
+from tf_keras.callbacks import TensorBoard
 import plotly.figure_factory as ff
 
 # Konstanten
@@ -34,19 +34,26 @@ X_train, X_test, y_train, y_test = train_test_split(
     random_state=RANDOM_SEED
 )
 
-print("Building neural network...")
-# Neuronales Netz erstellen
-model = Sequential()
-model.add(Dense(16, activation='relu', input_shape=(4,)))
-model.add(Dropout(0.2))
-model.add(Dense(8, activation='relu'))
-model.add(Dense(1, activation='sigmoid'))
+def create_model():
+    """
+    Creates and returns a simple neural network for binary classification
+    """
+    model = Sequential()
+    model.add(Dense(16, activation='relu', input_shape=(4,)))
+    model.add(Dropout(0.2))
+    model.add(Dense(8, activation='relu'))
+    model.add(Dense(1, activation='sigmoid'))
+    
+    model.compile(
+        optimizer='adam',
+        loss='binary_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    return model
 
-model.compile(
-    optimizer='adam',
-    loss='binary_crossentropy',
-    metrics=['accuracy']
-)
+print("Building neural network...")
+model = create_model()
 
 # TensorBoard Callback mit Confusion Matrix
 class ConfusionMatrixCallback(tf.keras.callbacks.Callback):

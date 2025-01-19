@@ -1,8 +1,8 @@
 import tensorflow as tf
-from keras.models import Sequential
-from keras.layers import Dense
-from tensorflow.keras.datasets import mnist
-from tensorflow.keras.utils import to_categorical
+from tf_keras.models import Sequential
+from tf_keras.layers import Dense
+from tf_keras.datasets import mnist
+from tf_keras.utils import to_categorical
 from sklearn.preprocessing import StandardScaler
 import datetime
 

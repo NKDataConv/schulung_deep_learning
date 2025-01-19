@@ -8,7 +8,7 @@ import time
 
 
 # Konstanten
-MODEL_NAME = "dbmdz/german-gpt2"  # Kleineres deutsches GPT-2 Modell
+MODEL_NAME = "dbmdz/german-gpt2"  # Kleines deutsches GPT-2 Modell
 EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
 MAX_LENGTH = 512
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -83,7 +83,6 @@ class RAGSystem:
         return answer
 
 
-
 # Initialisiere RAG System
 rag = RAGSystem()
 rag.add_documents(example_texts)
@@ -100,4 +99,3 @@ for i, doc in enumerate(retrieved_docs, 1):
 # Generiere Antwort
 answer = rag.generate(query, retrieved_docs)
 print(f"\nGenerierte Antwort: {answer}")
-

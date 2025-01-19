@@ -2,7 +2,9 @@
 
 # Zuerst müssen wir die benötigten Bibliotheken importieren
 import tensorflow as tf
-from tensorflow import keras
+from tf_keras.models import Sequential
+from tf_keras.layers import Dense
+from tf_keras.callbacks import TensorBoard
 import numpy as np
 import datetime
 
@@ -22,23 +24,27 @@ X_train = np.random.rand(num_samples, num_features).astype(np.float32)
 y_train = np.random.randint(num_classes, size=num_samples)
 
 # Erstellen des Modells mit Keras
-model = keras.Sequential()
-model.add(keras.layers.Dense(64, activation='relu', input_shape=(num_features,)))
-model.add(keras.layers.Dense(64, activation='relu'))
-model.add(keras.layers.Dense(num_classes, activation='softmax'))
+def create_model():
+    model = Sequential()
+    model.add(Dense(64, activation='relu', input_shape=(num_features,)))
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(num_classes, activation='softmax'))
 
-# Kompilieren des Modells mit Recall-Metrik
-model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy', 
-                      tf.keras.metrics.Recall(class_id=1)])
+    # Kompilieren des Modells mit Recall-Metrik
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy',
+                           tf.keras.metrics.Recall(class_id=1)])  # Recall für Klasse 1
+    return model
+
 
 # Erstellen eines Log-Verzeichnisses für TensorBoard
 log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 # Trainieren des Modells und gleichzeitig die TensorBoard-Callbacks nutzen
 # Hier verwenden wir die Dummy-Daten, um das Demo-Skript einfach zu halten
+model = create_model()
 model.fit(X_train, y_train, epochs=10, callbacks=[tensorboard_callback], validation_split=0.2)
 
 # Nach dem Training kann TensorBoard gestartet werden, um die Ergebnisse zu visualisieren

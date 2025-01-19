@@ -1,4 +1,4 @@
-# Übung: Einbinden von vortrainierten Embeddings in ein Klassifikationsmodell
+# Demo: Einbinden von vortrainierten Embeddings in ein Klassifikationsmodell
 
 from sentence_transformers import SentenceTransformer
 from datasets import load_dataset

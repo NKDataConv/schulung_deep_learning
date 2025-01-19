@@ -21,7 +21,7 @@ def softmax(x):
     Returns:
         numpy.ndarray: Softmax-normalisierter Vektor.
     """
-    e_x = np.exp(x - np.max(x))  # Überlauf vermeiden
+    e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum(axis=0)
 
 def scaled_dot_product_attention(Q, K, V, mask=None):

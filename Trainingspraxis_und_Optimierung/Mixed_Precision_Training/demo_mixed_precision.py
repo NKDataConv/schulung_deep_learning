@@ -15,7 +15,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 # Importieren der notwendigen Bibliotheken
 import tensorflow as tf
-from tensorflow.keras import layers, models
+from tf_keras import layers, models
 import numpy as np
 
 # Sicherstellen, dass nur die CPU verwendet wird
@@ -44,18 +44,25 @@ X_train = np.random.randint(1, vocab_size, size=(num_samples, max_length))
 # Zielwerte setzen (0 oder 1 für binäre Klassifizierung)
 y_train = np.random.randint(0, 2, size=(num_samples, 1)).astype(np.float16)
 
-# Erstellen eines einfachen RNN-Modells mit Keras
-model = models.Sequential([
-    layers.Embedding(input_dim=vocab_size, output_dim=128, input_length=max_length, dtype='float16'),  # Verwendung von float16
-    layers.SimpleRNN(64, return_sequences=True, dtype='float16'),  # Verwendung von float16
-    layers.SimpleRNN(32, dtype='float16'),  # Verwendung von float16
-    layers.Dense(1, activation='sigmoid', dtype='float16')  # Verwendung von float16
-])
+def create_model():
+    """
+    Creates and returns a RNN model with mixed precision
+    """
+    model = models.Sequential([
+        layers.Embedding(input_dim=vocab_size, output_dim=128, input_length=max_length, dtype='float16'),
+        layers.SimpleRNN(64, return_sequences=True, dtype='float16'),
+        layers.SimpleRNN(32, dtype='float16'),
+        layers.Dense(1, activation='sigmoid', dtype='float16')
+    ])
+    
+    model.compile(optimizer='adam', 
+                 loss='binary_crossentropy', 
+                 metrics=['accuracy'])
+    
+    return model
 
-# Kompilieren des Modells
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-
-# Zusammenfassen des Modells, um eine Übersicht der Layer und Parameter zu erhalten
+# Create and use the model
+model = create_model()
 model.summary()
 
 # Trainieren des Modells
