@@ -77,7 +77,7 @@ class SimpleDataset:
                 item['token_type_ids'] = torch.tensor(self.data['token_type_ids'][idx])
         elif 'text' in self.data:
             item['text'] = self.data['text'][idx]
-        item['labels'] = torch.tensor(self.data['labels'][idx])
+        item['labels'] = torch.tensor(self.data['labels'][idx], dtype=torch.long)
         return item
     
     def map(self, func, batched=True):
