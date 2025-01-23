@@ -40,27 +40,36 @@ class ReviewBatchInput(BaseModel):
 class ModelLoader:
     def __init__(self):
         self.model = None
+        self.model_uri = f"models:/{MODEL_NAME}/latest"
         
     def load_model(self):
         """Load the latest version of the model from MLflow"""
         try:
             print("Loading model from MLflow...")
+            mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+            
+            # Check if model exists in registry
+            try:
+                model_details = mlflow.tracking.MlflowClient().get_registered_model(MODEL_NAME)
+                print(f"Found model {MODEL_NAME} in registry")
+            except mlflow.exceptions.MlflowException as e:
+                if "RESOURCE_DOES_NOT_EXIST" in str(e):
+                    raise RuntimeError(f"Model {MODEL_NAME} not found in MLflow registry. Please ensure the model is registered.")
+                raise e
+
             # Show loading animation
             for _ in tqdm(range(10), desc="Loading model"):
                 time.sleep(0.1)
                 
-            mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-            
             # Get the latest version of the model
-            model = mlflow.transformers.load_model(
-                model_uri=f"models:/{MODEL_NAME}/latest"
-            )
+            model = mlflow.transformers.load_model(model_uri=self.model_uri)
             print("Model loaded successfully!")
             return model
             
         except Exception as e:
-            print(f"Error loading model: {str(e)}")
-            raise RuntimeError(f"Failed to load model: {str(e)}")
+            error_msg = f"Error loading model: {str(e)}"
+            logging.error(error_msg)
+            raise RuntimeError(error_msg)
 
 class DatabaseResponse(BaseModel):
     message: str
@@ -125,8 +134,15 @@ async def startup_event():
         # Create task for periodic reload
         asyncio.create_task(model_reloader.reload_model_periodically(app))
         
+    except RuntimeError as e:
+        error_msg = f"Startup failed: {str(e)}"
+        logging.error(error_msg)
+        print(error_msg)
+        sys.exit(1)
     except Exception as e:
-        print(f"Startup failed: {str(e)}")
+        error_msg = f"Unexpected error during startup: {str(e)}"
+        logging.error(error_msg)
+        print(error_msg)
         sys.exit(1)
 
 @app.post("/predict", response_model=Dict[str, float])
@@ -135,6 +151,12 @@ async def predict_sentiment(input_data: TextInput):
     Predict sentiment for input text
     Returns probability scores for positive and negative sentiments
     """
+    if not hasattr(app.state, 'model') or app.state.model is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Model not loaded. Please try again later."
+        )
+
     try:
         # Get model from app state
         model = app.state.model
@@ -162,9 +184,11 @@ async def predict_sentiment(input_data: TextInput):
         }
         
     except Exception as e:
+        error_msg = f"Prediction failed: {str(e)}"
+        logging.error(error_msg)
         raise HTTPException(
             status_code=500,
-            detail=f"Prediction failed: {str(e)}"
+            detail=error_msg
         )
 
 @app.get("/health")
