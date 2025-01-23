@@ -90,18 +90,26 @@ class SimpleDataset:
         return len(self.data['text'])
     
     def __getitem__(self, idx):
-        item = {
-            'input_ids': self.data['input_ids'][idx] if 'input_ids' in self.data else None,
-            'attention_mask': self.data['attention_mask'][idx] if 'attention_mask' in self.data else None,
-            'label': self.data['label'][idx]
-        }
-        if 'text' in self.data:
+        item = {}
+        # For tokenized data
+        if 'input_ids' in self.data:
+            item['input_ids'] = self.data['input_ids'][idx]
+            item['attention_mask'] = self.data['attention_mask'][idx]
+        # For raw data
+        elif 'text' in self.data:
             item['text'] = self.data['text'][idx]
+        
+        item['label'] = self.data['label'][idx]
         return item
     
     def map(self, func, batched=True):
         if batched:
             processed = func(self.data)
+            # Add labels to processed data
+            processed['label'] = self.data['label']
+            # Remove text field as it's no longer needed after tokenization
+            if 'text' in processed:
+                del processed['text']
         else:
             processed = {
                 'input_ids': [],
@@ -128,6 +136,15 @@ tokenized_test = test_dataset.map(preprocess_function, batched=True)
 # After loading data
 print("Sample of train_data:", {k: v[:2] for k, v in train_data.items()})
 print("Sample of tokenized_train:", {k: v[:2] for k, v in tokenized_train.data.items()})
+
+# After tokenization
+print("Available keys in tokenized_train:", tokenized_train.data.keys())
+print("First item in tokenized_train:", tokenized_train[0])
+
+# Before creating trainer
+print("Verifying tokenized dataset structure...")
+print("Train dataset length:", len(tokenized_train))
+print("Test dataset length:", len(tokenized_test))
 
 def compute_metrics(eval_pred):
     """Calculate F1 score"""
