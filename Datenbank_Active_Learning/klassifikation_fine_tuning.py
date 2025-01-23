@@ -26,10 +26,12 @@ DATABASE_PATH = "rotten_tomatoes.db"
 RANDOM_SEED = 42
 EXPERIMENT_NAME = "sentiment_classification"
 MODEL_NAME = "sentiment_bert_model"
-MLFLOW_TRACKING_URI = "file:./mlruns"
+MLFLOW_TRACKING_URI = os.path.abspath("./mlruns")
+MODEL_ARTIFACTS_PATH = "model_artifacts"
 
-# Ensure mlruns directory exists
-Path("mlruns").mkdir(exist_ok=True)
+# Ensure directories exist
+os.makedirs("mlruns", exist_ok=True)
+os.makedirs(MODEL_ARTIFACTS_PATH, exist_ok=True)
 
 def load_data_from_sqlite():
     """Load review data from SQLite database"""
@@ -231,22 +233,36 @@ def save_model_to_mlflow(model, tokenizer, results):
                 "eval_loss": results["eval_loss"]
             })
             
-            # Create model artifacts
+            # First save model locally
+            local_model_path = os.path.join(MODEL_ARTIFACTS_PATH, "model")
+            model.save_pretrained(local_model_path)
+            tokenizer.save_pretrained(local_model_path)
+            
+            # Create model components dictionary
             model_components = {
                 "model": model,
                 "tokenizer": tokenizer
             }
             
-            # Save model artifacts
-            mlflow.transformers.log_model(
+            # Log the model to MLflow
+            logged_model = mlflow.transformers.log_model(
                 transformers_model=model_components,
                 artifact_path="model",
                 registered_model_name=MODEL_NAME
             )
             
+            # Verify model registration
+            client = mlflow.tracking.MlflowClient()
+            try:
+                model_details = client.get_registered_model(MODEL_NAME)
+                logger.info(f"Model registered successfully with {len(model_details.latest_versions)} versions")
+            except mlflow.exceptions.MlflowException as e:
+                logger.error(f"Failed to verify model registration: {e}")
+                raise
+            
             logger.info(f"Model saved in MLflow with run ID: {run.info.run_id}")
             logger.info(f"Model registered as: {MODEL_NAME}")
-            logger.info(f"Model artifacts stored in: {os.path.abspath('./mlruns')}")
+            logger.info(f"Model artifacts stored in: {os.path.abspath(MLFLOW_TRACKING_URI)}")
             
             return run.info.run_id
             
@@ -256,6 +272,10 @@ def save_model_to_mlflow(model, tokenizer, results):
 
 if __name__ == "__main__":
     try:
+        # Set MLflow tracking URI at the start
+        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+        logger.info(f"MLflow tracking URI set to: {MLFLOW_TRACKING_URI}")
+        
         # Load and preprocess data
         logger.info("Loading data from SQLite database...")
         train_data, test_data = load_data_from_sqlite()
@@ -271,6 +291,17 @@ if __name__ == "__main__":
         
         # Save to MLflow
         run_id = save_model_to_mlflow(model, tokenizer, results)
+        
+        # Verify the saved model
+        client = mlflow.tracking.MlflowClient()
+        model_versions = client.search_model_versions(f"name='{MODEL_NAME}'")
+        if model_versions:
+            logger.info(f"Model versions found: {len(model_versions)}")
+            for version in model_versions:
+                logger.info(f"Version {version.version} - Status: {version.status}")
+        else:
+            logger.warning("No model versions found after saving!")
+        
         logger.info("Process completed successfully!")
         
     except Exception as e:

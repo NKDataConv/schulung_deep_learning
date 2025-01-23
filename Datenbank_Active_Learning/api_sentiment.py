@@ -10,10 +10,12 @@ import sqlite3
 import asyncio
 from datetime import datetime
 import logging
+import os
 
 # Constants
-MLFLOW_TRACKING_URI = "file:./mlruns"
+MLFLOW_TRACKING_URI = os.path.abspath("./mlruns")
 MODEL_NAME = "sentiment_bert_model"
+MODEL_STAGE = "latest"
 HOST = "127.0.0.1"
 PORT = 8000
 DATABASE_PATH = "rotten_tomatoes.db"
@@ -40,34 +42,57 @@ class ReviewBatchInput(BaseModel):
 class ModelLoader:
     def __init__(self):
         self.model = None
-        self.model_uri = f"models:/{MODEL_NAME}/latest"
+        self.model_uri = f"models:/{MODEL_NAME}/{MODEL_STAGE}"
         
     def load_model(self):
         """Load the latest version of the model from MLflow"""
         try:
             print("Loading model from MLflow...")
-            mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
             
-            # Check if model exists in registry
+            # Set absolute path for MLflow tracking URI
+            absolute_tracking_uri = os.path.abspath(MLFLOW_TRACKING_URI)
+            print(f"Using MLflow tracking URI: {absolute_tracking_uri}")
+            mlflow.set_tracking_uri(absolute_tracking_uri)
+            
+            # Get MLflow client
+            client = mlflow.tracking.MlflowClient()
+            
             try:
-                model_details = mlflow.tracking.MlflowClient().get_registered_model(MODEL_NAME)
-                print(f"Found model {MODEL_NAME} in registry")
+                # Try to get model details
+                model_details = client.get_registered_model(MODEL_NAME)
+                print(f"Found model {MODEL_NAME} with {len(model_details.latest_versions)} versions")
+                
+                # Get latest version
+                latest_version = max(
+                    model_details.latest_versions, 
+                    key=lambda x: x.version
+                )
+                print(f"Loading version {latest_version.version}")
+                
+                # Show loading animation
+                for _ in tqdm(range(10), desc="Loading model"):
+                    time.sleep(0.1)
+                
+                # Load the model
+                model = mlflow.transformers.load_model(
+                    model_uri=f"models:/{MODEL_NAME}/{latest_version.version}"
+                )
+                print("Model loaded successfully!")
+                return model
+                
             except mlflow.exceptions.MlflowException as e:
                 if "RESOURCE_DOES_NOT_EXIST" in str(e):
-                    raise RuntimeError(f"Model {MODEL_NAME} not found in MLflow registry. Please ensure the model is registered.")
-                raise e
-
-            # Show loading animation
-            for _ in tqdm(range(10), desc="Loading model"):
-                time.sleep(0.1)
+                    available_models = client.search_registered_models()
+                    models_list = [m.name for m in available_models]
+                    raise RuntimeError(
+                        f"Model {MODEL_NAME} not found in registry. "
+                        f"Available models: {models_list}"
+                    )
+                raise
                 
-            # Get the latest version of the model
-            model = mlflow.transformers.load_model(model_uri=self.model_uri)
-            print("Model loaded successfully!")
-            return model
-            
         except Exception as e:
             error_msg = f"Error loading model: {str(e)}"
+            print(error_msg)
             logging.error(error_msg)
             raise RuntimeError(error_msg)
 
@@ -123,6 +148,9 @@ model_reloader = ModelReloader()
 async def startup_event():
     """Load model during startup and start periodic reload"""
     try:
+        # Create mlruns directory if it doesn't exist
+        os.makedirs("mlruns", exist_ok=True)
+        
         # Initial model load
         app.state.model = model_loader.load_model()
         model_reloader.last_reload_time = datetime.now()
@@ -339,6 +367,38 @@ async def trigger_model_reload():
         raise HTTPException(
             status_code=500,
             detail=f"Failed to reload model: {str(e)}"
+        )
+
+# Add a new endpoint to check MLflow configuration
+@app.get("/mlflow/status")
+async def get_mlflow_status():
+    """Get information about MLflow configuration and available models"""
+    try:
+        client = mlflow.tracking.MlflowClient()
+        registered_models = client.search_registered_models()
+        
+        return {
+            "tracking_uri": mlflow.get_tracking_uri(),
+            "tracking_uri_absolute": os.path.abspath(MLFLOW_TRACKING_URI),
+            "registered_models": [
+                {
+                    "name": model.name,
+                    "latest_versions": [
+                        {
+                            "version": version.version,
+                            "status": version.status,
+                            "stage": version.current_stage
+                        }
+                        for version in model.latest_versions
+                    ]
+                }
+                for model in registered_models
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error checking MLflow status: {str(e)}"
         )
 
 if __name__ == "__main__":
