@@ -111,7 +111,15 @@ class SimpleDataset:
     def map(self, func, batched=True):
         try:
             if batched:
-                processed = func(self.data)
+                # Apply tokenization while preserving labels
+                tokenized = func(self.data['text'])
+                processed = {
+                    'input_ids': tokenized['input_ids'],
+                    'attention_mask': tokenized['attention_mask'],
+                    'labels': self.data['labels']  # Preserve the labels
+                }
+                if 'token_type_ids' in tokenized:
+                    processed['token_type_ids'] = tokenized['token_type_ids']
             else:
                 processed = {
                     'input_ids': [],
@@ -119,9 +127,13 @@ class SimpleDataset:
                     'labels': self.data['labels']
                 }
                 for i in range(len(self)):
-                    item_processed = func({'text': [self.data['text'][i]]})
+                    item_processed = func(self.data['text'][i])
                     processed['input_ids'].append(item_processed['input_ids'][0])
                     processed['attention_mask'].append(item_processed['attention_mask'][0])
+                    if 'token_type_ids' in item_processed:
+                        if 'token_type_ids' not in processed:
+                            processed['token_type_ids'] = []
+                        processed['token_type_ids'].append(item_processed['token_type_ids'][0])
             
             # Verify processed data has required keys
             required_keys = ['input_ids', 'attention_mask', 'labels']
@@ -172,12 +184,13 @@ if __name__ == "__main__":
         # Tokenize datasets
         logger.info("Starting tokenization...")
         tokenized_train = train_dataset.map(lambda x: tokenizer(
-            x["text"], truncation=True, max_length=128, padding='max_length'
-        ))
+            x, truncation=True, max_length=128, padding='max_length'
+        ), batched=True)
         logger.info("Train dataset tokenized successfully")
+        
         tokenized_test = test_dataset.map(lambda x: tokenizer(
-            x["text"], truncation=True, max_length=128, padding='max_length'
-        ))
+            x, truncation=True, max_length=128, padding='max_length'
+        ), batched=True)
         logger.info("Test dataset tokenized successfully")
         
         # Training arguments
