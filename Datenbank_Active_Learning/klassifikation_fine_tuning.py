@@ -10,6 +10,12 @@ import mlflow
 from mlflow.models import infer_signature
 import torch
 import os
+import logging
+from pathlib import Path
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Constants
 MODEL_ID = "bert-base-cased"
@@ -20,16 +26,25 @@ DATABASE_PATH = "rotten_tomatoes.db"
 RANDOM_SEED = 42
 EXPERIMENT_NAME = "sentiment_classification"
 MODEL_NAME = "sentiment_bert_model"
+MLFLOW_TRACKING_URI = "file:./mlruns"
+
+# Ensure mlruns directory exists
+Path("mlruns").mkdir(exist_ok=True)
 
 def load_data_from_sqlite():
     """Load review data from SQLite database"""
     try:
+        if not Path(DATABASE_PATH).exists():
+            raise FileNotFoundError(f"Database file {DATABASE_PATH} not found!")
+            
         with sqlite3.connect(DATABASE_PATH) as conn:
             query = "SELECT text, label FROM reviews"
             df = pd.read_sql_query(query, conn)
             
-            # Convert sentiment labels to binary (assuming positive/negative classification)
-            # df['label'] = df['label'].map({'positive': 1, 'negative': 0})
+            if len(df) == 0:
+                raise ValueError("No data found in the reviews table!")
+                
+            logger.info(f"Loaded {len(df)} reviews from database")
             
             # Split into train and test sets
             train_df, test_df = train_test_split(
@@ -38,7 +53,7 @@ def load_data_from_sqlite():
                 random_state=RANDOM_SEED
             )
             
-            # Convert to dictionary format similar to HuggingFace datasets
+            # Convert to dictionary format
             train_data = {
                 'text': train_df['text'].tolist(),
                 'labels': train_df['label'].tolist()
@@ -50,11 +65,8 @@ def load_data_from_sqlite():
             
             return train_data, test_data
             
-    except sqlite3.Error as e:
-        print(f"Database error occurred: {str(e)}")
-        raise
     except Exception as e:
-        print(f"An error occurred while loading data: {str(e)}")
+        logger.error(f"Error loading data: {str(e)}")
         raise
 
 # Load data from SQLite
@@ -192,50 +204,75 @@ trainer = Trainer(
     compute_metrics=compute_metrics,
 )
 
-print("Starting training...")
-trainer.train()
-print("Training completed!")
-
-results = trainer.evaluate()
-print(f"Evaluation results: {results}")
-
 # Save the model with MLflow
-try:
-    # Set up MLflow tracking to use local directory
-    mlflow.set_tracking_uri("file:./mlruns")
-    mlflow.set_experiment(EXPERIMENT_NAME)
-    
-    # Start MLflow run
-    with mlflow.start_run(run_name=f"bert_finetuning_{RANDOM_SEED}") as run:
-        # Log parameters
-        mlflow.log_params({
-            "model_name": MODEL_ID,
-            "batch_size": BATCH_SIZE,
-            "learning_rate": LEARNING_RATE,
-            "num_epochs": NUM_EPOCHS,
-            "weight_decay": training_args.weight_decay,
-        })
+def save_model_to_mlflow(model, tokenizer, results):
+    """Save the trained model to MLflow"""
+    try:
+        # Set up MLflow tracking
+        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+        mlflow.set_experiment(EXPERIMENT_NAME)
         
-        # Log metrics
-        mlflow.log_metrics({
-            "f1_score": results["eval_f1"],
-            "eval_loss": results["eval_loss"]
-        })
+        logger.info(f"Saving model to MLflow at {MLFLOW_TRACKING_URI}")
         
-        # Save model artifacts
-        mlflow.transformers.log_model(
-            transformers_model={
+        # Start MLflow run
+        with mlflow.start_run(run_name=f"bert_finetuning_{RANDOM_SEED}") as run:
+            # Log parameters
+            mlflow.log_params({
+                "model_name": MODEL_ID,
+                "batch_size": BATCH_SIZE,
+                "learning_rate": LEARNING_RATE,
+                "num_epochs": NUM_EPOCHS,
+                "weight_decay": training_args.weight_decay,
+            })
+            
+            # Log metrics
+            mlflow.log_metrics({
+                "f1_score": results["eval_f1"],
+                "eval_loss": results["eval_loss"]
+            })
+            
+            # Create model artifacts
+            model_components = {
                 "model": model,
                 "tokenizer": tokenizer
-            },
-            artifact_path="model",
-            registered_model_name=MODEL_NAME
-        )
+            }
+            
+            # Save model artifacts
+            mlflow.transformers.log_model(
+                transformers_model=model_components,
+                artifact_path="model",
+                registered_model_name=MODEL_NAME
+            )
+            
+            logger.info(f"Model saved in MLflow with run ID: {run.info.run_id}")
+            logger.info(f"Model registered as: {MODEL_NAME}")
+            logger.info(f"Model artifacts stored in: {os.path.abspath('./mlruns')}")
+            
+            return run.info.run_id
+            
+    except Exception as e:
+        logger.error(f"Error saving model to MLflow: {str(e)}")
+        raise
+
+if __name__ == "__main__":
+    try:
+        # Load and preprocess data
+        logger.info("Loading data from SQLite database...")
+        train_data, test_data = load_data_from_sqlite()
         
-        print(f"Model saved in MLflow with run ID: {run.info.run_id}")
-        print(f"Model registered as: {MODEL_NAME}")
-        print(f"Model artifacts stored in: {os.path.abspath('./mlruns')}")
+        # Train model
+        logger.info("Starting training...")
+        trainer.train()
+        logger.info("Training completed!")
         
-except Exception as e:
-    print(f"Error saving model to MLflow: {str(e)}")
-    raise
+        # Evaluate
+        results = trainer.evaluate()
+        logger.info(f"Evaluation results: {results}")
+        
+        # Save to MLflow
+        run_id = save_model_to_mlflow(model, tokenizer, results)
+        logger.info("Process completed successfully!")
+        
+    except Exception as e:
+        logger.error(f"Training process failed: {str(e)}")
+        raise
