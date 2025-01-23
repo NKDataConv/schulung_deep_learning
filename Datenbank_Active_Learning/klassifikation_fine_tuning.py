@@ -79,7 +79,15 @@ def preprocess_function(examples):
         texts = examples["text"]
     else:
         texts = [example["text"] for example in examples]
-    return tokenizer(texts, truncation=True, max_length=128, padding=True)
+    
+    # Ensure we get all the necessary fields
+    return tokenizer(
+        texts,
+        truncation=True,
+        max_length=128,
+        padding='max_length',
+        return_tensors=None  # Return python lists
+    )
 
 # Create dataset-like objects
 class SimpleDataset:
@@ -87,39 +95,41 @@ class SimpleDataset:
         self.data = data_dict
     
     def __len__(self):
-        return len(self.data['text'])
+        return len(self.data['text']) if 'text' in self.data else len(self.data['input_ids'])
     
     def __getitem__(self, idx):
         item = {}
         # For tokenized data
         if 'input_ids' in self.data:
-            item['input_ids'] = self.data['input_ids'][idx]
-            item['attention_mask'] = self.data['attention_mask'][idx]
+            item['input_ids'] = torch.tensor(self.data['input_ids'][idx])
+            item['attention_mask'] = torch.tensor(self.data['attention_mask'][idx])
+            if 'token_type_ids' in self.data:
+                item['token_type_ids'] = torch.tensor(self.data['token_type_ids'][idx])
         # For raw data
         elif 'text' in self.data:
             item['text'] = self.data['text'][idx]
         
-        item['label'] = self.data['label'][idx]
+        item['labels'] = torch.tensor(self.data['label'][idx])
         return item
     
     def map(self, func, batched=True):
         if batched:
             processed = func(self.data)
             # Add labels to processed data
-            processed['label'] = self.data['label']
-            # Remove text field as it's no longer needed after tokenization
-            if 'text' in processed:
-                del processed['text']
+            processed['labels'] = self.data['label']
+            # Convert all lists to numpy arrays
+            processed = {k: np.array(v) for k, v in processed.items()}
         else:
             processed = {
                 'input_ids': [],
                 'attention_mask': [],
-                'label': self.data['label']
+                'labels': self.data['label']
             }
             for i in range(len(self)):
                 item_processed = func({'text': [self.data['text'][i]]})
                 processed['input_ids'].append(item_processed['input_ids'][0])
                 processed['attention_mask'].append(item_processed['attention_mask'][0])
+            processed = {k: np.array(v) for k, v in processed.items()}
         
         return SimpleDataset(processed)
 
@@ -138,8 +148,12 @@ print("Sample of train_data:", {k: v[:2] for k, v in train_data.items()})
 print("Sample of tokenized_train:", {k: v[:2] for k, v in tokenized_train.data.items()})
 
 # After tokenization
-print("Available keys in tokenized_train:", tokenized_train.data.keys())
-print("First item in tokenized_train:", tokenized_train[0])
+print("\nVerifying data structure:")
+print("Keys in first training item:", tokenized_train[0].keys())
+print("Shape of input_ids:", len(tokenized_train[0]['input_ids']))
+print("Shape of attention_mask:", len(tokenized_train[0]['attention_mask']))
+print("Label type:", type(tokenized_train[0]['labels']))
+print("Label value:", tokenized_train[0]['labels'])
 
 # Before creating trainer
 print("Verifying tokenized dataset structure...")
