@@ -41,11 +41,11 @@ def load_data_from_sqlite():
             # Convert to dictionary format similar to HuggingFace datasets
             train_data = {
                 'text': train_df['text'].tolist(),
-                'label': train_df['label'].tolist()
+                'labels': train_df['label'].tolist()
             }
             test_data = {
                 'text': test_df['text'].tolist(),
-                'label': test_df['label'].tolist()
+                'labels': test_df['label'].tolist()
             }
             
             return train_data, test_data
@@ -109,21 +109,21 @@ class SimpleDataset:
         elif 'text' in self.data:
             item['text'] = self.data['text'][idx]
         
-        item['labels'] = torch.tensor(self.data['label'][idx])
+        item['labels'] = torch.tensor(self.data['labels'][idx])
         return item
     
     def map(self, func, batched=True):
         if batched:
             processed = func(self.data)
             # Add labels to processed data
-            processed['labels'] = self.data['label']
+            processed['labels'] = self.data['labels']
             # Convert all lists to numpy arrays
             processed = {k: np.array(v) for k, v in processed.items()}
         else:
             processed = {
                 'input_ids': [],
                 'attention_mask': [],
-                'labels': self.data['label']
+                'labels': self.data['labels']
             }
             for i in range(len(self)):
                 item_processed = func({'text': [self.data['text'][i]]})
@@ -144,16 +144,14 @@ print("Tokenizing test data...")
 tokenized_test = test_dataset.map(preprocess_function, batched=True)
 
 # After loading data
-print("Sample of train_data:", {k: v[:2] for k, v in train_data.items()})
-print("Sample of tokenized_train:", {k: v[:2] for k, v in tokenized_train.data.items()})
+print("\nInitial data structure:")
+print("Train data keys:", train_data.keys())
+print("Sample labels:", train_data['labels'][:5])
 
 # After tokenization
-print("\nVerifying data structure:")
-print("Keys in first training item:", tokenized_train[0].keys())
-print("Shape of input_ids:", len(tokenized_train[0]['input_ids']))
-print("Shape of attention_mask:", len(tokenized_train[0]['attention_mask']))
-print("Label type:", type(tokenized_train[0]['labels']))
-print("Label value:", tokenized_train[0]['labels'])
+print("\nTokenized data structure:")
+print("Tokenized train keys:", tokenized_train.data.keys())
+print("Sample tokenized labels:", tokenized_train.data['labels'][:5])
 
 # Before creating trainer
 print("Verifying tokenized dataset structure...")
