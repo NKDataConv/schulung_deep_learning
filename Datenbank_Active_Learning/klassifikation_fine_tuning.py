@@ -74,7 +74,12 @@ data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
 def preprocess_function(examples):
     """Tokenize input data"""
-    return tokenizer(examples["text"], truncation=True, max_length=128)
+    # Handle both dictionary and batch inputs
+    if isinstance(examples, dict):
+        texts = examples["text"]
+    else:
+        texts = [example["text"] for example in examples]
+    return tokenizer(texts, truncation=True, max_length=128, padding=True)
 
 # Create dataset-like objects
 class SimpleDataset:
@@ -85,11 +90,29 @@ class SimpleDataset:
         return len(self.data['text'])
     
     def __getitem__(self, idx):
-        return {key: self.data[key][idx] for key in self.data}
+        item = {
+            'input_ids': self.data['input_ids'][idx] if 'input_ids' in self.data else None,
+            'attention_mask': self.data['attention_mask'][idx] if 'attention_mask' in self.data else None,
+            'label': self.data['label'][idx]
+        }
+        if 'text' in self.data:
+            item['text'] = self.data['text'][idx]
+        return item
     
     def map(self, func, batched=True):
-        processed = func(self.data)
-        processed.update({'label': self.data['label']})
+        if batched:
+            processed = func(self.data)
+        else:
+            processed = {
+                'input_ids': [],
+                'attention_mask': [],
+                'label': self.data['label']
+            }
+            for i in range(len(self)):
+                item_processed = func({'text': [self.data['text'][i]]})
+                processed['input_ids'].append(item_processed['input_ids'][0])
+                processed['attention_mask'].append(item_processed['attention_mask'][0])
+        
         return SimpleDataset(processed)
 
 # Convert to dataset objects
@@ -97,8 +120,14 @@ train_dataset = SimpleDataset(train_data)
 test_dataset = SimpleDataset(test_data)
 
 # Tokenize train/test data
+print("Tokenizing training data...")
 tokenized_train = train_dataset.map(preprocess_function, batched=True)
+print("Tokenizing test data...")
 tokenized_test = test_dataset.map(preprocess_function, batched=True)
+
+# After loading data
+print("Sample of train_data:", {k: v[:2] for k, v in train_data.items()})
+print("Sample of tokenized_train:", {k: v[:2] for k, v in tokenized_train.data.items()})
 
 def compute_metrics(eval_pred):
     """Calculate F1 score"""
