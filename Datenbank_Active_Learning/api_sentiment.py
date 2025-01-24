@@ -153,7 +153,7 @@ async def load_new_data(batch: ReviewBatch):
         import sqlite3
         
         # Connect to database
-        conn = sqlite3.connect("rotten_tomatoes.db", check_same_thread=False)
+        conn = sqlite3.connect("../rotten_tomatoes.db", check_same_thread=False)
         cursor = conn.cursor()
         
         # Insert data - access Review object attributes directly
