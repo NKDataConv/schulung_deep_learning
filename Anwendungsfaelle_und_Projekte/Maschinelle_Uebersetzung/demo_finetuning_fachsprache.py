@@ -38,19 +38,31 @@ except Exception as e:
 # Eine Funktion zur Tokenisierung des Textes
 def preprocess_function(examples):
     try:
-        inputs = examples['translation']['de']  # Deutsche Texte
-        targets = examples['translation']['en']  # Englische Texte
+        # Extrahiere die Übersetzungen direkt aus dem Dataset
+        inputs = [t['de'] for t in examples['translation']]
+        targets = [t['en'] for t in examples['translation']]
         
-        model_inputs = tokenizer(inputs, max_length=MAX_LENGTH, truncation=True)
+        model_inputs = tokenizer(
+            inputs,
+            max_length=MAX_LENGTH,
+            truncation=True,
+            padding=True
+        )
         
         # Die Zieltexte tokenisieren
         with tokenizer.as_target_tokenizer():
-            labels = tokenizer(targets, max_length=MAX_LENGTH, truncation=True)
+            labels = tokenizer(
+                targets,
+                max_length=MAX_LENGTH,
+                truncation=True,
+                padding=True
+            )
 
         model_inputs["labels"] = labels["input_ids"]
         return model_inputs
     except Exception as e:
         print(f"Fehler bei der Vorverarbeitung: {str(e)}")
+        print(f"Beispiel-Eingabe: {examples['translation'][0]}")  # Zeige ein Beispiel
         raise
 
 # Schritt 3: Daten tokenisieren
