@@ -42,7 +42,24 @@ def insert_data_batch(cursor: sqlite3.Cursor, data: List[Dict]) -> None:
         )
     except sqlite3.Error as e:
         print(f"Error inserting batch into database: {str(e)}")
-        sys.exit(1)
+        raise
+
+def get_database_connection():
+    """Get a connection to the database."""
+    try:
+        return sqlite3.connect(DATABASE_NAME)
+    except sqlite3.Error as e:
+        print(f"Error connecting to database: {str(e)}")
+        raise
+
+def close_database_connection(conn: sqlite3.Connection):
+    """Safely close the database connection."""
+    try:
+        if conn:
+            conn.close()
+    except sqlite3.Error as e:
+        print(f"Error closing database connection: {str(e)}")
+        raise
 
 def main():
     try:
