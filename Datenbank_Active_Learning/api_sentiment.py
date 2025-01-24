@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Constants
-MODEL_DIR = "sentiment_model"
+MODEL_DIR = "../sentiment_model"
 HOST = "127.0.0.1"
 PORT = 8000
 RELOAD_INTERVAL = 60  # seconds
@@ -156,10 +156,10 @@ async def load_new_data(batch: ReviewBatch):
         conn = sqlite3.connect("rotten_tomatoes.db", check_same_thread=False)
         cursor = conn.cursor()
         
-        # Insert data
+        # Insert data - access Review object attributes directly
         cursor.executemany(
             "INSERT INTO reviews (text, label) VALUES (?, ?)",
-            [(review['text'], review['label']) for review in batch.reviews]
+            [(review.text, review.label) for review in batch.reviews]
         )
         
         # Commit and close
