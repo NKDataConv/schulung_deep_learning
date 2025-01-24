@@ -32,8 +32,12 @@ app = FastAPI(
 class TextInput(BaseModel):
     text: str
 
+class Review(BaseModel):
+    text: str
+    label: int
+
 class ReviewBatch(BaseModel):
-    reviews: List[Dict[str, any]] = [{"text": str, "label": int}]
+    reviews: List[Review]
 
 class ModelLoader:
     def __init__(self):
