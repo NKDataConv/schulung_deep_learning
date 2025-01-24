@@ -24,8 +24,13 @@ MODEL_SAVE_DIR = "./fine_tuned_model"
 # Schritt 2: Daten vorbereiten
 try:
     dataset = load_dataset(DATASET_NAME, 'de-en')
-    train_dataset = dataset['train']
-    valid_dataset = dataset['validation'] if 'validation' in dataset else dataset['test']
+    # Teile den Trainingsdatensatz in Training und Validierung auf
+    split_dataset = dataset['train'].train_test_split(test_size=0.1, seed=42)
+    train_dataset = split_dataset['train']
+    valid_dataset = split_dataset['test']  # Verwende den 'test' Split als Validierungsdatensatz
+    
+    print(f"Trainingsdaten: {len(train_dataset)} Beispiele")
+    print(f"Validierungsdaten: {len(valid_dataset)} Beispiele")
 except Exception as e:
     print(f"Fehler beim Laden des Datasets: {str(e)}")
     raise
