@@ -102,15 +102,19 @@ data_collator = DataCollatorForSeq2Seq(tokenizer, model=model)
 # Schritt 5: Trainingsargumente definieren
 training_args = TrainingArguments(
     output_dir=OUTPUT_DIR,
-    evaluation_strategy="epoch",
+    evaluation_strategy="steps",
+    eval_steps=500,
+    save_strategy="steps",
+    save_steps=500,
     learning_rate=LEARNING_RATE,
     per_device_train_batch_size=BATCH_SIZE,
     per_device_eval_batch_size=BATCH_SIZE,
     num_train_epochs=NUM_EPOCHS,
     weight_decay=0.01,
-    save_total_limit=2,  # Nur die letzten 2 Checkpoints behalten
-    load_best_model_at_end=True,  # Bestes Modell am Ende laden
-    metric_for_best_model="eval_loss",
+    save_total_limit=2,
+    load_best_model_at_end=True,
+    metric_for_best_model="loss",
+    greater_is_better=False,
     logging_dir=f"{OUTPUT_DIR}/logs",
     logging_steps=100,
 )
