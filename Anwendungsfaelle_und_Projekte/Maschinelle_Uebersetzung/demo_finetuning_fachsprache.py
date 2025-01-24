@@ -17,7 +17,7 @@ DATASET_NAME = "Helsinki-NLP/opus_books"
 MAX_LENGTH = 128
 BATCH_SIZE = 16
 LEARNING_RATE = 2e-5
-NUM_EPOCHS = 3
+NUM_EPOCHS = 1
 OUTPUT_DIR = "./results"
 MODEL_SAVE_DIR = "./fine_tuned_model"
 
