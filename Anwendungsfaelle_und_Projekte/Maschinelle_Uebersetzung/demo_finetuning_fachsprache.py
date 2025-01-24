@@ -39,14 +39,26 @@ except Exception as e:
 def preprocess_function(examples):
     try:
         # Extrahiere die Übersetzungen direkt aus dem Dataset
-        inputs = [t['de'] for t in examples['translation']]
-        targets = [t['en'] for t in examples['translation']]
+        if isinstance(examples['translation'], list):
+            # Wenn translation eine Liste ist
+            inputs = []
+            targets = []
+            for item in examples['translation']:
+                if isinstance(item, dict) and 'de' in item and 'en' in item:
+                    inputs.append(item['de'])
+                    targets.append(item['en'])
+        else:
+            # Wenn translation ein einzelnes Dictionary ist
+            inputs = examples['translation']['de']
+            targets = examples['translation']['en']
         
+        # Tokenisiere die Eingabetexte
         model_inputs = tokenizer(
             inputs,
             max_length=MAX_LENGTH,
             truncation=True,
-            padding=True
+            padding=True,
+            return_tensors=None  # Wichtig: Keine Tensoren zurückgeben
         )
         
         # Die Zieltexte tokenisieren
@@ -55,19 +67,34 @@ def preprocess_function(examples):
                 targets,
                 max_length=MAX_LENGTH,
                 truncation=True,
-                padding=True
+                padding=True,
+                return_tensors=None  # Wichtig: Keine Tensoren zurückgeben
             )
 
         model_inputs["labels"] = labels["input_ids"]
         return model_inputs
     except Exception as e:
         print(f"Fehler bei der Vorverarbeitung: {str(e)}")
-        print(f"Beispiel-Eingabe: {examples['translation'][0]}")  # Zeige ein Beispiel
+        print(f"Typ von translation: {type(examples['translation'])}")
+        print(f"Beispiel-Eingabe: {examples['translation']}")
         raise
 
 # Schritt 3: Daten tokenisieren
-tokenized_train_dataset = train_dataset.map(preprocess_function, batched=True)
-tokenized_valid_dataset = valid_dataset.map(preprocess_function, batched=True)
+print("Tokenisiere Trainingsdaten...")
+tokenized_train_dataset = train_dataset.map(
+    preprocess_function,
+    batched=True,
+    remove_columns=train_dataset.column_names,
+    desc="Tokenisiere Trainingsdaten"
+)
+
+print("Tokenisiere Validierungsdaten...")
+tokenized_valid_dataset = valid_dataset.map(
+    preprocess_function,
+    batched=True,
+    remove_columns=valid_dataset.column_names,
+    desc="Tokenisiere Validierungsdaten"
+)
 
 # Schritt 4: Batch-Größe und weitere Trainingsparameter setzen
 data_collator = DataCollatorForSeq2Seq(tokenizer, model=model)
