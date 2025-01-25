@@ -43,6 +43,27 @@ def generate_text_with_gpt(text, max_length=50):
     return generated_text
 
 
+def generate_text(text, max_length=50):
+    # Load model directly
+    from transformers import AutoTokenizer, AutoModelForCausalLM
+
+    model_name = "lightblue/lb-reranker-0.5B-v1.0"
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name)
+
+    # Tokenisierung des Eingabetextes
+    input_ids = tokenizer.encode(text, return_tensors='pt')
+
+    # Textgenerierung
+    output_ids = model.generate(input_ids, max_length=max_length, num_return_sequences=1)
+
+    # Dekodierung der Ausgabe-IDs in lesbaren Text
+    generated_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+
+    return generated_text
+
+
 # Beispieltext für BERT
 bert_text = "Deep Learning has revolutionized the field of artificial intelligence."
 print("Performing inference with BERT...")
@@ -53,4 +74,10 @@ print("BERT Output Shape:", bert_output.shape)  # Ausgabe der Form der BERT-Embe
 gpt_text = "Once upon a time in a distant land"
 print("\nGenerating text with GPT-2...")
 gpt_generated_text = generate_text_with_gpt(gpt_text)
+print("Generated Text with GPT-2:", gpt_generated_text)
+
+
+gpt_text = "Once upon a time in a distant land"
+print("\nGenerating text with GPT-2...")
+gpt_generated_text = generate_text(gpt_text)
 print("Generated Text with GPT-2:", gpt_generated_text)

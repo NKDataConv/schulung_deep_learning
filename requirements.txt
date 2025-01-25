@@ -26,3 +26,6 @@ faiss-cpu
 evaluate
 seqeval
 sentencepiece
+torch
+tqdm
+pydantic
